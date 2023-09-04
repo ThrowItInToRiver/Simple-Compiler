@@ -15,8 +15,11 @@ string keyword[keywordSum] = {"if", "else", "for", "while", "do", "int", "read",
 char singleword[50] = "+-*(){};,:";
 //下面定义双分界符的首字符
 char doubleword[10] = "><=!";
+
+//当前检查的行数
+int line_num = 1;
 //存储非法字符
-vector<string> errors;
+vector<pair<int,string>> error_chars;
 
 enum TokenType 
 {
@@ -89,8 +92,14 @@ void stateTransition(int current_state, const char* contentPtr, string s)
                 }
 
                 else if(*contentPtr==' ' || *contentPtr=='\n')  //空格，跳过
+                {
+                    if(*contentPtr=='\n')
+                        line_num ++;
+
                     stateTransition(0, ++ contentPtr, s);
-                
+                }
+                    
+    
                 else if(*contentPtr == '/')         
                     stateTransition(6, ++ contentPtr, s);
                 
@@ -197,7 +206,7 @@ void stateTransition(int current_state, const char* contentPtr, string s)
                     Token t = Token(type_singleword, s);
                     signs.push_back(t);
                     s = "";
-                    s.push_back(*contentPtr);
+                    //s.push_back(*contentPtr);      //!!不能加进去
                     stateTransition(0, contentPtr, s);
                 }
                 break;
@@ -241,7 +250,7 @@ void stateTransition(int current_state, const char* contentPtr, string s)
                     string error_char;             //记录错误信息
                     error_char += "Error char: ";
                     error_char.push_back(*contentPtr);
-                    errors.push_back(error_char);
+                    error_chars.push_back( make_pair(line_num,error_char) );
 
                     stateTransition(0, ++ contentPtr, s);
                 }
@@ -298,10 +307,10 @@ int TESTscan()
     for (Token t : signs)                //写入信息
         outputFile << get_token_string(t) << " " <<t.getLexeme() << endl;
     
-    if(errors.size()>0)           //有错误信息
+    if(error_chars.size()>0)           //有错误信息
     {
-        for(string s : errors)
-            outputFile << s << endl;
+        for(int i=0; i<error_chars.size(); i++)
+            outputFile << "Error Line:" << error_chars[i].first << "   " << error_chars[i].second << endl;
 
         outputFile.close();
         return 3;
